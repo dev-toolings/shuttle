@@ -227,3 +227,37 @@ func TestDoctorUnreachableAuditReportsLocalSelection(t *testing.T) {
 		t.Fatalf("fallback not reported: output=%s error=%v read=%v", output, err, readErr)
 	}
 }
+
+func TestDoctorScanContinuesAfterAnImageWithFindings(t *testing.T) {
+	dir := t.TempDir()
+	script := `#!/bin/sh
+if [ "$1" = "--version" ]; then
+ printf '{"Version":"test","VulnerabilityDB":{"UpdatedAt":"%s"}}' "` + time.Now().UTC().Format(time.RFC3339) + `"
+ exit 0
+fi
+while [ "$#" -gt 0 ]; do
+ if [ "$1" = "--output" ]; then shift; output="$1"; fi
+ image="$1"
+ shift
+done
+printf '{"ArtifactName":"%s","ArtifactType":"container_image","Metadata":{"ImageID":"sha256:test"},"Results":[{"Vulnerabilities":[{"VulnerabilityID":"CVE-1","Severity":"HIGH"}]}]}' "$image" > "$output"
+`
+	if err := os.WriteFile(filepath.Join(dir, "trivy"), []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir)
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(old) })
+	first := "caddy:2@sha256:" + strings.Repeat("a", 64)
+	second := "registry:3@sha256:" + strings.Repeat("b", 64)
+	err = scanSelectedImages([]imageScanSelection{{first, "vps-retained"}, {second, "vps-retained"}})
+	if err == nil || !strings.Contains(err.Error(), first) || !strings.Contains(err.Error(), second) {
+		t.Fatalf("both images must be reported, got %v", err)
+	}
+}

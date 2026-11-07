@@ -145,6 +145,7 @@ func scanSelectedImages(selections []imageScanSelection) error {
 	}
 	sort.Slice(selections, func(i, j int) bool { return selections[i].Reference < selections[j].Reference })
 	seen := map[string]bool{}
+	var findings []error
 	for _, selection := range selections {
 		image := selection.Reference
 		if seen[image] {
@@ -215,11 +216,13 @@ func scanSelectedImages(selections []imageScanSelection) error {
 		if err = os.WriteFile(filepath.Join(dir, base+".scanner.json"), version, 0600); err != nil {
 			return err
 		}
+		// Findings on one image must not hide the next: the first real scan on
+		// 2026-11-07 stopped on Caddy and never reached the registry.
 		if err = evaluateImageSecurity(image, body, version, time.Now()); err != nil {
-			return fmt.Errorf("%w (report: %s)", err, report)
+			findings = append(findings, fmt.Errorf("%w (report: %s)", err, report))
 		}
 	}
-	return nil
+	return errors.Join(findings...)
 }
 
 func evaluateImageSecurity(image string, body, scanner []byte, now time.Time) error {

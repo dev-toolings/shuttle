@@ -161,8 +161,9 @@ shuttle monitoring external --config /etc/shuttle/config.json --format json
 Set `monitoring.external.url` to the public HTTPS health URL. Set either
 `monitoring.external.webhook_env` or
 `monitoring.external.webhook_secret_file` for the independent notification
-channel. Keep `monitoring.external.state_dir` on that machine so its incident
-and recovery history has an independent scheduler and durable state.
+channel. Keep `monitoring.external.state_dir` on that machine, below
+`/var/lib/shuttle/monitoring-external`, so its incident and recovery history has an
+independent scheduler and durable state. The URL must be HTTPS.
 
 For a minimal systemd installation on the probe host, create a service that
 runs the command as a non-root account and a timer with the same interval as

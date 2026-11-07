@@ -1,5 +1,11 @@
 # Shuttle: active changes
 
+## Le scan d'images s'arrêtait à la première image avec des CVE (07-11-2026)
+
+- Cause : `doctor --scan-images` retournait dès la première image signalée. Le premier vrai scan a produit un rapport pour Caddy et n'a jamais atteint le registre, alors que les deux étaient annoncés.
+- Correction : chaque image sélectionnée est scannée, puis les constats sont rendus ensemble.
+- Compatibilité : le scan reste optionnel et ne bloque rien. Une erreur de scan arrête toujours la commande sans résultat sain.
+
 ## Un nom IPv6 seul faisait échouer doctor --strict (07-11-2026)
 
 - Cause : le contrôle DNS ne lisait que l'enregistrement A. Sur un hôte en IPv6 seul, avec un certificat Let's Encrypt valide, `doctor --strict` sortait 1 à 95 sur 100.
