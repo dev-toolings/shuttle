@@ -53,6 +53,9 @@ func runSignedStackAudit(cfg *config.Config, mode, service string, lines int) (s
 }
 
 func runSignedReadinessAudit(cfg *config.Config) (readiness.Report, error) {
+	if !cfg.IsInternal() && cfg.Readiness.HealthcheckPath == "" {
+		return readiness.Report{}, errors.New(`readiness.healthcheck_path is required for a public app: add it to config.json, for example {"readiness": {"healthcheck_path": "/health"}}`)
+	}
 	group, host, err := singleVPS(cfg)
 	if err != nil {
 		return readiness.Report{}, err

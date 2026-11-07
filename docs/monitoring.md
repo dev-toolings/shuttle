@@ -165,6 +165,30 @@ channel. Keep `monitoring.external.state_dir` on that machine, below
 `/var/lib/shuttle/monitoring-external`, so its incident and recovery history has an
 independent scheduler and durable state. The URL must be HTTPS.
 
+For an app named `demo`, a minimal monitoring block in `config.json` is:
+
+```json
+"monitoring": {
+  "enabled": true,
+  "external": {
+    "url": "https://app.example.com/health",
+    "webhook_env": "SHUTTLE_EXTERNAL_WEBHOOK"
+  }
+}
+```
+
+Set `SHUTTLE_EXTERNAL_WEBHOOK` in the probe service environment. Before running
+the probe as the non-root account `probe`, create its default state directory:
+
+```sh
+sudo install -d -o probe -m 0700 /var/lib/shuttle/monitoring-external/demo
+```
+
+Replace `probe` and `demo` with the service account and configured app name.
+The default state path includes the app name. The final directory must be owned
+by the service account and private. Its parent directories must be owned by
+root or the service account and not writable by group or others.
+
 For a minimal systemd installation on the probe host, create a service that
 runs the command as a non-root account and a timer with the same interval as
 the local policy. The probe only needs outbound HTTPS and write access to its

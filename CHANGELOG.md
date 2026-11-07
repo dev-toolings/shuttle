@@ -1,5 +1,11 @@
 # Shuttle: active changes
 
+## Doctor échouait sans expliquer le chemin de readiness manquant (07-11-2026)
+
+- Cause : pour une application publique sans bloc `readiness`, le plan d'audit refusait le chemin vide avec une erreur obscure.
+- Correction : doctor indique la clé `readiness.healthcheck_path` à ajouter et donne un exemple dans `config.json` avant de construire le plan.
+- Compatibilité : les applications internes, la validation du helper et le protocole signé restent inchangés.
+
 ## Le scan d'images s'arrêtait à la première image avec des CVE (07-11-2026)
 
 - Cause : `doctor --scan-images` retournait dès la première image signalée. Le premier vrai scan a produit un rapport pour Caddy et n'a jamais atteint le registre, alors que les deux étaient annoncés.

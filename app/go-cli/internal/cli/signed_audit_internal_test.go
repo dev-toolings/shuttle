@@ -1,6 +1,23 @@
 package cli
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+
+	"github.com/dev-toolings/deploy-shuttle/go-cli/internal/config"
+)
+
+func TestSignedReadinessAuditRequiresPublicHealthcheckPath(t *testing.T) {
+	var cfg config.Config
+	if err := json.Unmarshal([]byte(`{"domain":"app.example.com"}`), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	_, err := runSignedReadinessAudit(&cfg)
+	want := `readiness.healthcheck_path is required for a public app: add it to config.json, for example {"readiness": {"healthcheck_path": "/health"}}`
+	if err == nil || err.Error() != want {
+		t.Fatalf("error = %v, want %q", err, want)
+	}
+}
 
 func TestInternalReadinessOldHelperMessageRequiresExactRefusal(t *testing.T) {
 	message := "the host helper is too old for an internal app readiness audit; run `shuttle helper update`"
