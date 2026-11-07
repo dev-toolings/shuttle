@@ -55,3 +55,9 @@ non sensibles. Les commandes Docker arbitraires restent réservées au compte
 opérateur root-equivalent, lorsqu'il a été explicitement configuré.
 
 Voir aussi [configuration](configuration.md) et [opérations](operations.md).
+
+## Tools the checks need on the target
+
+The DNS check runs `dig` on the target, and `setup` does not install it. Install
+`dnsutils` on Debian or Ubuntu, otherwise `doctor --strict` fails that check for lack
+of proof.

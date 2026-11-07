@@ -577,6 +577,10 @@ pinned request speaks is decided by `caddy.tls_mode`:
 
 ### `caddy.tls_mode`
 
+With `"off"`, the edge serves HTTP only, but `shuttle doctor` still checks HTTPS
+health and HSTS after a deploy: `doctor --strict` fails on those checks by design.
+Use this mode for a private network, not for a public site.
+
 `"acme"` obtains and renews a certificate for every hostname of the application.
 `"off"` renders the sites as `http://` only, which is what a CDN or a tunnel in
 front of the origin requires: that edge already terminated TLS, and no inbound
