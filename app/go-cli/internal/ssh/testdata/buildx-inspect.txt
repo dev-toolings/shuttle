@@ -1,0 +1,10 @@
+Name:          shuttle-shuttle-build-recette-remote-a37dd252a66a
+Driver:        docker-container
+Last Activity: 2026-09-13 14:35:06 +0000 UTC
+
+Nodes:
+Name:                  shuttle-shuttle-build-recette-remote-a37dd252a66a0
+Endpoint:              ssh://build@203.0.113.62:22
+Driver Options:        image="moby/buildkit:v0.33.0@sha256:6c2fa84a6b61ccd72899dde4239f8d5717f05f9a8ca6f3cad185fb1a95a94de3" network="host"
+Status:                stopped
+BuildKit daemon flags: --allow-insecure-entitlement=network.host

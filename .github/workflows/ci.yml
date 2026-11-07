@@ -1,0 +1,71 @@
+name: CI
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: stable
+          cache-dependency-path: app/go-cli/go.sum
+      - name: Format
+        run: test -z "$(gofmt -l app/go-cli)"
+      - name: Vet
+        run: go vet ./...
+        working-directory: app/go-cli
+      # A darwin-only compile error once reached the v0.0.57 release build: a
+      # symbol declared only in a _linux.go file was used by a shared file.
+      # Vetting every release target here catches that on the pull request.
+      - name: Vet release targets
+        run: |
+          for target in darwin/amd64 darwin/arm64 linux/arm64; do
+            GOOS=${target%/*} GOARCH=${target#*/} go vet ./...
+          done
+        working-directory: app/go-cli
+      # The build-runner supervisor runs on the Linux runner host and needs GNU
+      # timeout and sha256sum, which macOS does not ship; its test pins PATH to
+      # /usr/bin:/bin, so it cannot pass there. The build-runner files are
+      # frozen read-only, so the macOS job skips that one test by name instead
+      # of the test skipping itself. The Linux job still runs it.
+      - name: Tests
+        run: go test ${GO_TEST_SKIP:+-skip "$GO_TEST_SKIP"} ./...
+        working-directory: app/go-cli
+        env:
+          GO_TEST_SKIP: ${{ matrix.os == 'macos-latest' && '^TestRunnerSupervisorCleansItsLeaseAfterControlDisconnect$' || '' }}
+      - name: Race detection
+        run: go test -race ${GO_TEST_SKIP:+-skip "$GO_TEST_SKIP"} ./...
+        working-directory: app/go-cli
+        env:
+          GO_TEST_SKIP: ${{ matrix.os == 'macos-latest' && '^TestRunnerSupervisorCleansItsLeaseAfterControlDisconnect$' || '' }}
+      - name: Reachable Go vulnerabilities
+        if: matrix.os == 'ubuntu-latest'
+        run: sh "$GITHUB_WORKSPACE/scripts/audit-retry.sh" go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+        working-directory: app/go-cli
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      # The release contract runs build-go.sh against invalid signing inputs.
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: stable
+          cache-dependency-path: app/go-cli/go.sum
+      # The shell contracts grep the repository with ripgrep, which the runner
+      # image does not ship. Without it every rg-based contract exits 127.
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep jq
+      - name: Operational shell contracts
+        run: sh scripts/test.sh

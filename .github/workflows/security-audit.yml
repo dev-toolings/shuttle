@@ -1,0 +1,62 @@
+name: Security Audit (Daily)
+
+on:
+  schedule:
+    # 03h00 Paris = 01h00 UTC
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/security-audit.yml"
+      - "app/go-cli/go.mod"
+      - "app/go-cli/go.sum"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "**/bun.lock"
+      - "**/yarn.lock"
+      - "**/pnpm-lock.yaml"
+      - "**/composer.lock"
+      - "**/requirements*.txt"
+      - "**/poetry.lock"
+
+permissions:
+  contents: read
+
+jobs:
+  go-vulnerability-audit:
+    name: Go Reachable Vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          # Pin the language and scanner versions: a scan must be reproducible
+          # and must not silently change behaviour on a future Go release.
+          go-version: stable
+          cache-dependency-path: app/go-cli/go.sum
+      - name: Fail on reachable Go vulnerabilities
+        run: sh "$GITHUB_WORKSPACE/scripts/audit-retry.sh" go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+        working-directory: app/go-cli
+
+  obfuscation-scan:
+    name: JS Obfuscation Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Scan for obfuscated JS in config files
+        run: |
+          FOUND=0
+          for f in $(find . -maxdepth 3 -name "*.config.js" -o -name "*.config.mjs" -o -name "*.config.cjs" -o -name ".eslintrc.js" -o -name ".prettierrc.js" | grep -v node_modules); do
+            MAX_LINE=$(awk '{ if (length > max) max = length } END { print max }' "$f")
+            if [ "${MAX_LINE:-0}" -gt 500 ]; then
+              echo "::error file=$f::Line longer than 500 chars — possible obfuscated payload"
+              FOUND=1
+            fi
+            if grep -qP 'global\[|_\$_[0-9a-f]' "$f" 2>/dev/null; then
+              echo "::error file=$f::Suspicious obfuscation pattern detected"
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then exit 1; fi
+          echo "All config files clean"

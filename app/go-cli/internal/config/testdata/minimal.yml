@@ -1,0 +1,5 @@
+app: myapp
+domain: myapp.example.com
+server:
+  host: 203.0.113.10
+  user: deploy

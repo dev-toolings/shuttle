@@ -1,0 +1,4 @@
+#!/bin/sh
+# Passwordless sudo, as on a GitHub-hosted runner. ci-local runs the job
+# container as root, so the command runs as is. Mounted by scripts/ci-local.sh.
+exec "$@"

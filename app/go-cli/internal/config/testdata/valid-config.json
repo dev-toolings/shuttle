@@ -1,0 +1,128 @@
+{
+  "version": 2,
+  "app": "demo",
+  "domain": "demo.example.com",
+  "server": {
+    "host": "203.0.113.10",
+    "user": "deploy",
+    "port": 22,
+    "vpn": {},
+    "access": {}
+  },
+  "servers": {
+    "default": {
+      "hosts": [
+        "203.0.113.10"
+      ],
+      "user": "deploy",
+      "port": 22,
+      "vpn": {},
+      "access": {
+        "allowed_public_tcp_ports": [
+          80,
+          443
+        ]
+      }
+    }
+  },
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "deploy": {
+    "strategy": "swarm",
+    "timeout": 120,
+    "retain": 2,
+    "auto_rollback": true,
+    "hooks": {
+      "pre_deploy": null,
+      "switch": null,
+      "post_deploy": null
+    },
+    "blue_green": {
+      "drain_timeout": 0,
+      "readiness_delay": 0
+    },
+    "concurrency": 5,
+    "swarm": {
+      "replicas": 0,
+      "mode": "single-node"
+    },
+    "compose_files": [
+      "docker-compose.yml"
+    ],
+    "prune_build_cache": "off",
+    "build_cache_keep": "5GB",
+    "promotion_slo_seconds": 30,
+    "update_monitor_seconds": 5,
+    "total_slo_seconds": 30
+  },
+  "services": {
+    "web": {
+      "port": 3000,
+      "command": "",
+      "healthcheck": {
+        "type": "http",
+        "path": "/health",
+        "interval": 0,
+        "timeout": 0,
+        "retries": 0
+      },
+      "resources": {}
+    }
+  },
+  "secrets": {
+    "file": ".shuttle/secrets.enc",
+    "backend": "",
+    "host": {}
+  },
+  "env": {},
+  "proxy": {
+    "driver": "",
+    "ssl": {
+      "provider": ""
+    }
+  },
+  "registry": {
+    "driver": ""
+  },
+  "database": {
+    "backup": {}
+  },
+  "notifications": {},
+  "caddy": {
+    "conf_dir": "/opt/caddy/conf.d",
+    "reload_command": "docker service update --force caddy_caddy",
+    "network": "caddy_network",
+    "basic_auth": {}
+  },
+  "dev": {
+    "ssl": false,
+    "ports": {
+      "http": 0,
+      "https": 0
+    }
+  },
+  "provision": {
+    "php_fpm": {
+      "opcache": {}
+    },
+    "nvm": {}
+  },
+  "setup": {
+    "slo_seconds": 600,
+    "swap_mode": "managed",
+    "apparmor_mode": "managed"
+  },
+  "production": {},
+  "retention": {
+    "registry_cache": "5GB",
+    "postgres_backups": 7,
+    "min_free_percent": 20
+  },
+  "readiness": {
+    "preset": "node-api",
+    "healthcheck_path": "/health"
+  },
+  "infrastructure": {}
+}
