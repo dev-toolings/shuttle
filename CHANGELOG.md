@@ -1,5 +1,11 @@
 # Shuttle: active changes
 
+## Un nom IPv6 seul faisait échouer doctor --strict (07-11-2026)
+
+- Cause : le contrôle DNS ne lisait que l'enregistrement A. Sur un hôte en IPv6 seul, avec un certificat Let's Encrypt valide, `doctor --strict` sortait 1 à 95 sur 100.
+- Correction : sans enregistrement A, le contrôle lit l'AAAA et le compare aux adresses globales de l'hôte. Il réussit si l'adresse est la sienne et échoue sinon.
+- Compatibilité : un nom avec un enregistrement A garde le même contrôle. Un nom sans A ni AAAA échoue comme avant.
+
 ## Le verrou Compose ne fonctionnait pas sur toutes les versions de mv (07-11-2026, DEV-DEPL-111)
 
 - Cause : la publication par mv dépendait des options et du comportement de coreutils, différents sur macOS et les versions récentes de Linux.

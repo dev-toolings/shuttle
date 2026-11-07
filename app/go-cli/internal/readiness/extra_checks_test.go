@@ -527,3 +527,33 @@ func TestUnsafeDomainNeverReachesAdapter(t *testing.T) {
 		t.Fatalf("expected passed quoted probe, got %+v", quoted)
 	}
 }
+
+func TestDNSPointsToServerAcceptsAnIPv6OnlyName(t *testing.T) {
+	for name, tc := range map[string]struct {
+		addresses string
+		want      Status
+	}{
+		"address on this host":    {"2: eth0    inet6 2001:db8::10/64 scope global\n", Passed},
+		"address on another host": {"2: eth0    inet6 2001:db8::99/64 scope global\n", Failed},
+	} {
+		t.Run(name, func(t *testing.T) {
+			adapter := scriptedAdapter{respond: func(cmd string) execx.Result {
+				switch {
+				case strings.Contains(cmd, "command -v dig"):
+					return execx.Result{ExitCode: 0}
+				case strings.Contains(cmd, "dig +short AAAA"):
+					return execx.Result{ExitCode: 0, Stdout: "2001:db8::10\n"}
+				case strings.Contains(cmd, "dig +short A"):
+					return execx.Result{ExitCode: 0}
+				case strings.Contains(cmd, "ip -o -6 addr"):
+					return execx.Result{ExitCode: 0, Stdout: tc.addresses}
+				default:
+					return execx.Result{ExitCode: 0}
+				}
+			}}
+			if res := checkDNSPointsToServer("app.example.com")(adapter); res.Status != tc.want {
+				t.Fatalf("expected %v, got %+v", tc.want, res)
+			}
+		})
+	}
+}

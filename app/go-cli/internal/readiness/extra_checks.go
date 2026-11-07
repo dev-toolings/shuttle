@@ -695,6 +695,28 @@ func checkDNSPointsToServer(domain string) Check {
 			}
 		}
 		if dnsIP == "" {
+			// An IPv6-only name is valid: on 2026-11-07 a host served a verified
+			// Let's Encrypt certificate over IPv6 and strict doctor still failed
+			// here for lack of an A record. No public IPv6 lookup is needed, the
+			// address is compared with the ones this host holds.
+			aaaa := strings.TrimSpace(adapter.Run(pipefailCommand("dig +short AAAA "+shell.Escape(domain)+" | tail -n 1"), 5*time.Second).Stdout)
+			if parsed := net.ParseIP(aaaa); parsed != nil && parsed.To4() == nil {
+				if strings.Contains(adapter.Run("ip -o -6 addr show scope global", 2*time.Second).Stdout, " "+aaaa+"/") {
+					return CheckResult{
+						ID: "dns.domain_not_pointing_to_server", Title: "DNS A record points to this server",
+						Category: "dns", Severity: Medium, Status: Passed,
+						Summary:  domain + " resolves over IPv6 to this server (" + aaaa + ").",
+						Evidence: map[string]any{"domain": domain, "dnsIP": aaaa},
+					}
+				}
+				return CheckResult{
+					ID: "dns.domain_not_pointing_to_server", Title: "DNS A record points to this server",
+					Category: "dns", Severity: Medium, Status: Failed,
+					Summary:     domain + " resolves to " + aaaa + ", which is not an address of this server.",
+					Remediation: "Update the AAAA record to point directly at this server.",
+					Evidence:    map[string]any{"domain": domain, "dnsIP": aaaa},
+				}
+			}
 			return CheckResult{
 				ID: "dns.domain_not_pointing_to_server", Title: "DNS A record points to this server",
 				Category: "dns", Severity: Medium, Status: Failed,
