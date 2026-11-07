@@ -404,7 +404,8 @@ func TestRootHelperProbeStopsForkedChild(t *testing.T) {
 			until := time.Now().Add(200 * time.Millisecond)
 			for {
 				status, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
-				if os.IsNotExist(err) {
+				// Procfs can return ESRCH if the process is reaped after open.
+				if os.IsNotExist(err) || errors.Is(err, syscall.ESRCH) {
 					break
 				}
 				if err != nil {
