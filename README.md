@@ -88,6 +88,9 @@ shuttle doctor --strict
 shuttle deploy
 ```
 
+Lancez `init` depuis les sources de votre application. Dans un dossier vide, certains
+presets, dont `node-api`, ne créent pas de `Dockerfile` : il faut en fournir un.
+
 Lors de la création d'un Dockerfile, `shuttle init` résout les versions stables
 des images de base dans leur majeure actuelle et écrit leurs digests. Si un
 registre est indisponible, la génération échoue en nommant l'image concernée.

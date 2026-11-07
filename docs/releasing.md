@@ -54,3 +54,17 @@ development builds must remain explicitly acknowledged with
 ```bash
 make build
 ```
+
+## Publishing to the public repository
+
+The signing key stays in the private repository's workflow, so the public release is
+copied from it. After the workflow of a tag succeeds:
+
+```sh
+sh scripts/publish-public.sh --push Shuttle shuttle@users.noreply.github.com
+gh release download vX.Y.Z -D /tmp/release
+gh release create vX.Y.Z -R dev-toolings/shuttle /tmp/release/* --title vX.Y.Z --latest --notes "..."
+```
+
+The export refuses to run if it matches `tmp/public-denylist`. The public tag must point
+at the commit pushed by the export: create it before `gh release create`.
