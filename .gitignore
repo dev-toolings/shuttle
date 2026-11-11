@@ -14,7 +14,6 @@ data/
 
 # build artifacts
 app/go-cli/shuttle
-config.bat
 .claude/worktrees/
 shuttle
 deploy-shuttle
